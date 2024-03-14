@@ -1,0 +1,155 @@
+Program.Sub.ScreenSU.Start
+Gui.FormMain..Create
+Gui.FormMain..Caption("Ship-To Notes")
+Gui.FormMain..Size(6765,6345)
+Gui.FormMain..MinX(0)
+Gui.FormMain..MinY(0)
+Gui.FormMain..Position(0,0)
+Gui.FormMain..BackColor(-2147483633)
+Gui.FormMain..MaxButton(False)
+Gui.FormMain..MousePointer(0)
+Gui.FormMain..Sizeable(False)
+Gui.FormMain..Event(UnLoad,FormMain_UnLoad)
+Gui.FormMain.frameOptions.Create(Frame)
+Gui.FormMain.frameOptions.Size(6255,1110)
+Gui.FormMain.frameOptions.Position(225,240)
+Gui.FormMain.ddlHeaderFooter.Create(DropDownList)
+Gui.FormMain.ddlHeaderFooter.Size(1650,330)
+Gui.FormMain.ddlHeaderFooter.Position(165,450)
+Gui.FormMain.ddlHeaderFooter.Parent("frameOptions")
+Gui.FormMain.lblPosition.Create(Label,"Position",True,1935,255,0,165,225,True,0,"Arial",8,-2147483633,0)
+Gui.FormMain.lblPosition.Parent("frameOptions")
+Gui.FormMain.chkSalesOrder.Create(CheckBox)
+Gui.FormMain.chkSalesOrder.Size(1290,360)
+Gui.FormMain.chkSalesOrder.Position(2010,165)
+Gui.FormMain.chkSalesOrder.Parent("frameOptions")
+Gui.FormMain.chkSalesOrder.Caption("Sales Order")
+Gui.FormMain.chkPackList.Create(CheckBox)
+Gui.FormMain.chkPackList.Size(1560,360)
+Gui.FormMain.chkPackList.Position(2010,495)
+Gui.FormMain.chkPackList.Parent("frameOptions")
+Gui.FormMain.chkPackList.Caption("Packing List")
+Gui.FormMain.chkInvoice.Create(CheckBox)
+Gui.FormMain.chkInvoice.Size(900,360)
+Gui.FormMain.chkInvoice.Position(3405,165)
+Gui.FormMain.chkInvoice.Parent("frameOptions")
+Gui.FormMain.chkInvoice.Caption("Invoice")
+Gui.FormMain.chkBOL.Create(CheckBox)
+Gui.FormMain.chkBOL.Size(1560,360)
+Gui.FormMain.chkBOL.Position(4545,165)
+Gui.FormMain.chkBOL.Parent("frameOptions")
+Gui.FormMain.chkBOL.Caption("BOL")
+Gui.FormMain.txtSalesOrderComments.Create(TextboxM)
+Gui.FormMain.txtSalesOrderComments.Size(6225,3720)
+Gui.FormMain.txtSalesOrderComments.Position(240,1560)
+Gui.FormMain.cmdSave.Create(Button)
+Gui.FormMain.cmdSave.Size(855,375)
+Gui.FormMain.cmdSave.Position(5595,5400)
+Gui.FormMain.cmdSave.Caption("Save")
+Gui.FormMain.cmdSave.Event(Click,cmdSave_Click)
+Program.Sub.ScreenSU.End
+
+Program.Sub.Preflight.Start
+Program.Sub.Preflight.End
+
+Program.Sub.Main.Start
+'Coded by: TCM
+'Coded for Betts Industries
+'Paid for via VT hours
+'Program launches from script 3 of order header screen
+'Pulls in comments that are tied to the customer/ship-to and allows them to modify and post to the order header comments table.  Does not allow edit, do that through the comments button.
+
+'11910 - script 1 button
+'11560 - populate
+
+f.Intrinsic.Control.SelectCase(v.Caller.Hook)
+f.Intrinsic.Control.Case(11560)
+	v.Passed.000203.Set("Ship-To Comms")
+	f.Intrinsic.Control.End
+f.Intrinsic.Control.Case(11930)
+	f.Intrinsic.Control.CallSub(GetShipToComments)
+	gui.FormMain.txtSalesOrderComments.Text(v.Args.SHIPTOTEXT)
+	f.Intrinsic.Control.CallSub(LoadDdl)
+	gui.FormMain..Visible(True)
+f.Intrinsic.Control.EndSelect
+Program.Sub.Main.End
+
+Program.Sub.GetShipToComments.Start
+V.Local.sSQL.Declare
+v.Local.sReturn.Declare
+'000006 - customer number
+'000061 - customer ship to
+
+f.Intrinsic.String.Build("SELECT TEXT FROM CUST_SHIP2_HF_TEXT WHERE CUST = '{0}' AND SHIPTO = '{1}';",v.Passed.000006,v.Passed.000061,v.Local.sSQL)
+
+f.ODBC.Connection!conGetShipToText.opencompanyconnection
+f.ODBC.Connection!conGetShipToText.executeandreturn(v.Local.sSQL,v.Local.sReturn)
+f.ODBC.Connection!conGetShipToText.Close
+f.Intrinsic.Variable.AddRV("SHIPTOTEXT",v.Local.sReturn)
+Program.Sub.GetShipToComments.End
+
+Program.Sub.LoadDdl.Start
+gui.FormMain.ddlHeaderFooter.AddItem("Header",0)
+gui.FormMain.ddlHeaderFooter.AddItem("Footer",0)
+gui.FormMain.ddlHeaderFooter.Text("Header")
+Program.Sub.LoadDdl.End
+
+Program.Sub.cmdSave_Click.Start
+'000003 - Order Number
+v.Local.sText.Declare
+v.Local.sSQL.Declare
+V.Local.sType.Declare
+v.Local.sOnSalesOrder.Declare
+v.Local.sOnInvoice.Declare
+v.Local.sOnBOL.Declare
+v.Local.sOnPackList.Declare
+v.Local.sOrderNumber.Declare
+'text
+v.Local.sText.Set(v.Screen.FormMain!txtSalesOrderComments.Text)
+'type
+f.Intrinsic.Control.If(v.Screen.FormMain!ddlHeaderFooter.Value,=,"Header")
+f.Intrinsic.Control.Else
+	v.Local.sType.Set("1")
+f.Intrinsic.Control.EndIf
+'on sales order
+f.Intrinsic.Control.If(v.Screen.FormMain!chkSalesOrder.Value,=,1)
+	v.Local.sOnSalesOrder.Set("1")
+f.Intrinsic.Control.Else
+f.Intrinsic.Control.EndIf
+'on invoice
+f.Intrinsic.Control.If(v.Screen.FormMain!chkInvoice.Value,=,1)
+	v.Local.sOnInvoice.Set("1")
+f.Intrinsic.Control.Else
+f.Intrinsic.Control.EndIf
+'on BOL
+f.Intrinsic.Control.If(v.Screen.FormMain!chkBOL.Value,=,1)
+	v.Local.sOnBOL.Set("1")
+f.Intrinsic.Control.Else
+f.Intrinsic.Control.EndIf
+'on pack list
+f.Intrinsic.Control.If(v.Screen.FormMain!chkPackList.Value,=,1)
+	v.Local.sOnPackList.Set("1")
+f.Intrinsic.Control.Else
+f.Intrinsic.Control.EndIf
+'order number - padded
+f.Intrinsic.String.LPad(v.Passed.000003,"0",7,v.Local.sOrderNumber)
+f.Intrinsic.String.Build("INSERT INTO ORDER_HF_TEXT (ORDER_NUMBER,TYPE,ON_SORDR,ON_INVC,ON_BOL,ON_PKLIST,TEXT) VALUES ('{0}', '{1}', '{2}', '{3}', '{4}', '{5}', '{6}');",V.Local.sOrderNumber,v.Local.sType,v.Local.sOnSalesOrder,v.Local.sOnInvoice,v.Local.sOnBOL,v.Local.sOnPackList,v.Local.sText.PSQLFriendly,v.Local.sSQL.Declare)
+f.ODBC.Connection!conUpdateText.opencompanyconnection
+f.Intrinsic.Control.Try
+	f.ODBC.Connection!conUpdateText.execute(v.Local.sSQL)
+f.Intrinsic.Control.Catch
+	f.Intrinsic.UI.Msgbox(v.Ambient.ErrorDescription,"Something Went Wrong")
+	f.ODBC.Connection!conUpdateText.Close
+	f.Intrinsic.Control.ExitSub
+f.Intrinsic.Control.EndTry
+
+f.Intrinsic.UI.Msgbox("Saved Succesfully","Success")
+f.ODBC.Connection!conUpdateText.Close
+f.Intrinsic.Control.End
+Program.Sub.cmdSave_Click.End
+
+Program.Sub.FormMain_UnLoad.Start
+f.Intrinsic.Control.End
+Program.Sub.FormMain_UnLoad.End
+
+
